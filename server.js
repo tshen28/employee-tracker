@@ -26,6 +26,7 @@ const ask = () => {
             case "View all employees":
                 break;
             case "Add a Department":
+                addDepartment();
                 break;
             case "Add a role":
                 break;
@@ -33,8 +34,23 @@ const ask = () => {
                 break;
             case "Update an employee role":
                 break;
+            default:
+                console.log("Please choose an option.");
         }
     });
 };
+
+const addDepartment = () => {
+    inquirer.prompt({
+        type: "input",
+        message: "What is the name of the department?",
+        name: "addDepartment"
+    })
+    .then(answers => {
+        const newDepartment = answers.addDepartment;
+        console.log(newDepartment);
+        ask();
+    })
+}
 
 ask();
