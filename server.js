@@ -39,11 +39,13 @@ function ask() {
                     addDepartment();
                     break;
                 case "Add a role":
+                    addRole();
                     break;
                 case "Add an employee":
                     addEmployee();
                     break;
                 case "Update an employee role":
+                    updateRole();
                     break;
                 default:
                     console.log("Please choose an option.");
@@ -88,13 +90,27 @@ const viewRoles = () => {
     })
 };
 
+const allEmployees = () => {
+    return new Promise((fulfill, reject) => {
+        const employees = [];
+        db.query('SELECT first_name, last_name, id FROM employee', (err, res) => {
+            if (err) reject (err);
+            for (let i = 0; i < res.length; i++) {
+                employees.push({ name: res[i].first_name + " " + res[i].last_name, value: res[i].id })
+            }
+            fulfill(employees)
+            console.log(employees)
+        })
+    })
+};
+
 const allRoles = () => {
     return new Promise((fulfill, reject) => {
         const roles = [];
         db.query('SELECT title, id FROM role', (err, res) => {
             if (err) reject (err);
             for (let i = 0; i < res.length; i++) {
-                roles.push({ title: res[i].title, id: res[i].id })
+                roles.push({ name: res[i].title, value: res[i].id })
             }
             fulfill(roles)
         })
@@ -104,10 +120,10 @@ const allRoles = () => {
 const allDepartments = () => {
     return new Promise((fulfill, reject) => {
         const departments = [];
-        db.query('SELECT title, id FROM department', (err, res) => {
+        db.query('SELECT department_name, id FROM department', (err, res) => {
             if (err) reject (err);
             for (let i = 0; i < res.length; i++) {
-                departments.push({ department: res[i].department_name, id: res[i].id })
+                departments.push({ name: res[i].department_name, value: res[i].id })
             }
             fulfill(departments)
         })
@@ -116,6 +132,7 @@ const allDepartments = () => {
 
 const addEmployee = async () => {
     const role = await allRoles();
+
     inquirer.prompt([
         {
             name: "first",
@@ -140,6 +157,62 @@ const addEmployee = async () => {
     }).catch(err => {
         console.log(err);
     });
+};
+
+const addRole = async () => {
+    const departments = await allDepartments();
+
+    inquirer.prompt([
+        {
+            name: "title",
+            type: "input",
+            message: "Enter the title of the role."
+        },
+        {
+            name: "salary",
+            type: "input",
+            message: "Enter the salary of the role"
+        },
+        {
+            name: "department",
+            type: "list",
+            message: "Which department does this role belong to?",
+            choices: departments
+        }
+    ]).then(res => {
+        db.promise().query('INSERT INTO role (title, salary, department_id) VALUES (?,?,?)', [res.title, res.salary, res.department]);
+        console.log("Role added.");
+        ask();
+    }).catch(err => {
+        console.log(err);
+    });
+};
+
+const updateRole = async () => {
+    const employees = await allEmployees();
+    const roles = await allRoles();
+    console.log(roles);
+    console.log(employees)
+    inquirer.prompt([
+        {
+            name: "employee",
+            type: "list",
+            message: "Select an employee:",
+            choices: employees
+        },
+        {
+            name: "role",
+            type: "list",
+            message: "Select new role:",
+            choices: roles
+        }
+    ]).then(res => {
+        db.promise().query('UPDATE employee SET role_id = ? WHERE employee.id = ?', [res.role, res.employee]);
+        console.log("Role updated.");
+        ask();
+    }).catch(err => {
+        console.log(err);
+    })
 };
 
 
